@@ -1,0 +1,23 @@
+.settings/
+**/.vscode/
+
+
+**/target/
+**/bin/
+
+.classpath
+.project
+
+*.in
+*.dump
+*.out
+*.asm
+*.log
+*.debug
+*.o
+
+*.class
+
+# eclipse-formatter.xml
+
+**/doc/
