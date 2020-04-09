@@ -7,6 +7,7 @@ import java.io.*;
  * Class representing a type in SimpleDB.
  * Types are static objects defined by this class; hence, the Type
  * constructor is private.
+ * Types are int, string
  */
 public enum Type implements Serializable {
     INT_TYPE() {
