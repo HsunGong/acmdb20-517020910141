@@ -54,7 +54,7 @@ public class HeapPageId implements PageId {
         // some code goes here
         if (o == null || !(o instanceof HeapPageId)) return false;
         HeapPageId t = (HeapPageId) o;
-        return (this.tableId == t.tableId && this.pgNo == t.pgNo);
+        return (this.tableId.equals(t.tableId) && this.pgNo.equals(t.pgNo));
     }
 
     /**

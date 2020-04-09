@@ -294,7 +294,9 @@ public class HeapPage implements Page {
     public boolean isSlotUsed(int i) {
         // some code goes here
         if (i >= numSlots) return false;
-        return (header[i / 8] & (1 << (i % 8))) != 0;
+        byte b = header[i / 8];
+        int idx = 1 << (i % 8);
+        return (b & idx) != 0;
     }
 
     /**
