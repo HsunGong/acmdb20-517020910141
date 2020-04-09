@@ -19,6 +19,4 @@
 *.class
 
 # eclipse-formatter.xml
-
-**/doc/
 log
