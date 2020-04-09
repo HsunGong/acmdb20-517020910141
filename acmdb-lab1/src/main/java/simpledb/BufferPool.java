@@ -71,7 +71,7 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        Integer i;
+        int i;
         for (i = 0; i < this.pages.size(); ++i) {
             Page page = pages.get(i);
             if (page == null) break;
