@@ -22,8 +22,31 @@ public class Catalog {
      * Constructor.
      * Creates a new, empty catalog.
      */
-    public Catalog() {
-        // some code goes here
+    private class Table {
+        private DbFile file;
+        public DbFile getDbFile() {return this.file;}
+        public TupleDesc getTupleDesc() {return this.file.getTupleDesc();}
+        
+        private String pkeyField;
+        public String getPkeyField() { return this.pkeyField; }
+        private String name;
+        public String getName() { return this.name; }
+
+        public Table(DbFile file, String name, String pkeyField) {
+            this.file = file;
+            this.name = name;
+            this.pkeyField = pkeyField;
+        }
+
+    }
+
+    private ConcurrentHashMap<Integer, Table> IdTableMap;
+    private ConcurrentHashMap<String, Integer> NameIdMap;
+
+     public Catalog() {
+        // some code goes 
+        IdTableMap = new ConcurrentHashMap<>();
+        NameIdMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -37,6 +60,13 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        assert name != null; // can be ""
+        Integer id = this.NameIdMap.get(name);
+        if (this.NameIdMap.get(name) != null) this.IdTableMap.remove(id);
+        
+        id = file.getId();
+        this.IdTableMap.put(id, new Table(file, name, pkeyField));
+        this.NameIdMap.put(name, id);
     }
 
     public void addTable(DbFile file, String name) {
@@ -60,7 +90,10 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        if (name == null) throw new NoSuchElementException("name is null");
+        Integer id = this.NameIdMap.get(name);
+        if (id == null) throw new NoSuchElementException("id not found");
+        return id;
     }
 
     /**
@@ -71,7 +104,9 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        Table t = this.IdTableMap.get(tableid);
+        if (t == null) throw new NoSuchElementException("No such tableid");
+        return t.getTupleDesc();
     }
 
     /**
@@ -82,27 +117,35 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        Table t = this.IdTableMap.get(tableid);
+        if (t == null) throw new NoSuchElementException("No such tableid");
+        return t.getDbFile();
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+        Table t = this.IdTableMap.get(tableid);
+        if (t == null) throw new NoSuchElementException("No such tableid");
+        return t.getPkeyField();
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        return this.IdTableMap.keySet().iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+        Table t = this.IdTableMap.get(id); // tableid ??
+        if (t == null) throw new NoSuchElementException("No such tableid");
+        return t.getName();
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+        this.IdTableMap.clear();
+        this.NameIdMap.clear();
     }
     
     /**
@@ -112,8 +155,7 @@ public class Catalog {
     public void loadSchema(String catalogFile) {
         String line = "";
         String baseFolder=new File(new File(catalogFile).getAbsolutePath()).getParent();
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(new File(catalogFile)));
+        try (BufferedReader br = new BufferedReader(new FileReader(new File(catalogFile)));){
             
             while ((line = br.readLine()) != null) {
                 //assume line is of the format name (field type, field type, ...)
@@ -153,9 +195,9 @@ public class Catalog {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.exit(0);
         } catch (IndexOutOfBoundsException e) {
             System.out.println ("Invalid catalog entry : " + line);
+        } finally {
             System.exit(0);
         }
     }
