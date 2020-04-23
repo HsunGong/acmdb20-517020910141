@@ -202,8 +202,6 @@ public class BTreeFile implements DbFile {
 			case BTreePageId.LEAF: // end of recursive
 				return (BTreeLeafPage) this.getPage(tid, dirtypages, pid, perm);
 			case BTreePageId.INTERNAL:
-			case BTreePageId.HEADER:
-			case BTreePageId.ROOT_PTR:
 				BTreeInternalPage page = (BTreeInternalPage) this.getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
 				Iterator<BTreeEntry> iter = page.iterator();
 				
@@ -223,6 +221,8 @@ public class BTreeFile implements DbFile {
 				}
 				if (nextId == null) nextId = entry.getRightChild();
 				break;
+			case BTreePageId.HEADER:
+			case BTreePageId.ROOT_PTR:
 			default:
 				throw new DbException("Illegal pageid type.");
 		}
