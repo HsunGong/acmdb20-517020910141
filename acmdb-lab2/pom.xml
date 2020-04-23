@@ -5,10 +5,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>simpledb</groupId>
-  <artifactId>acmdb-lab1</artifactId>
+  <artifactId>acmdb-lab2</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>acmdb-lab1</name>
+  <name>acmdb-lab2</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 
