@@ -5,12 +5,11 @@ import static org.junit.Assert.assertFalse;
 import junit.framework.JUnit4TestAdapter;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import simpledb.systemtest.SimpleDbTestBase;
 
-@Ignore class RecordIdTest extends SimpleDbTestBase {
+public class RecordIdTest extends SimpleDbTestBase {
 
     private static RecordId hrid;
     private static RecordId hrid2;

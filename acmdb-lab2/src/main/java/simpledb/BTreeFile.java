@@ -196,7 +196,38 @@ public class BTreeFile implements DbFile {
 			Field f) 
 					throws DbException, TransactionAbortedException {
 		// some code goes here
-        return null;
+		BTreePageId nextId = null;
+
+		switch (pid.pgcateg()) {
+			case BTreePageId.LEAF: // end of recursive
+				return (BTreeLeafPage) this.getPage(tid, dirtypages, pid, perm);
+			case BTreePageId.INTERNAL:
+			case BTreePageId.HEADER:
+			case BTreePageId.ROOT_PTR:
+				BTreeInternalPage page = (BTreeInternalPage) this.getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
+				Iterator<BTreeEntry> iter = page.iterator();
+				
+				if (iter == null || !iter.hasNext()) throw new DbException("Illegal entry iterator.");
+				if (f == null) {
+					nextId = iter.next().getLeftChild();
+					break;
+				}
+
+				BTreeEntry entry = null;
+				while (iter.hasNext()) {
+					entry = iter.next();
+					if (entry.getKey().compare(Op.GREATER_THAN_OR_EQ, f)) {
+						nextId = entry.getLeftChild();
+						break;
+					}
+				}
+				if (nextId == null) nextId = entry.getRightChild();
+				break;
+			default:
+				throw new DbException("Illegal pageid type.");
+		}
+
+		return findLeafPage(tid, dirtypages, nextId, perm, f);
 	}
 	
 	/**

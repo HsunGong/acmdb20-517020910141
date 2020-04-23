@@ -1,16 +1,13 @@
 package simpledb;
 
 import static org.junit.Assert.assertEquals;
-
-import org.junit.Ignore;
-
 import junit.framework.JUnit4TestAdapter;
 
 import org.junit.Test;
 
 import simpledb.systemtest.SimpleDbTestBase;
 
-@Ignore class TupleTest extends SimpleDbTestBase {
+public class TupleTest extends SimpleDbTestBase {
 
     /**
      * Unit test for Tuple.getField() and Tuple.setField()

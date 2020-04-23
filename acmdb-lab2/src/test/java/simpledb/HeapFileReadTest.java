@@ -6,13 +6,12 @@ import simpledb.systemtest.SystemTestUtil;
 import java.util.*;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 import junit.framework.JUnit4TestAdapter;
 
-@Ignore public class HeapFileReadTest extends SimpleDbTestBase {
+public class HeapFileReadTest extends SimpleDbTestBase {
     private HeapFile hf;
     private TransactionId tid;
     private TupleDesc td;

@@ -1,4 +1,5 @@
 package simpledb;
+
 import org.junit.Test;
 
 import simpledb.systemtest.SimpleDbTestBase;

@@ -3,11 +3,9 @@ package simpledb;
 import java.io.*;
 import java.util.*;
 
-import org.junit.Ignore;
-
 import static org.junit.Assert.*;
 
-@Ignore public class TestUtil {
+public class TestUtil {
     /**
      * @return an IntField with value n
      */

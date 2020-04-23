@@ -2,6 +2,8 @@ package simpledb;
 
 import java.io.Serializable;
 
+import simpledb.Predicate.Op;
+
 /**
  * IndexPredicate compares a field which has index on it against a given value
  * @see simpledb.IndexDbIterator
@@ -9,6 +11,9 @@ import java.io.Serializable;
 public class IndexPredicate implements Serializable {
 	
     private static final long serialVersionUID = 1L;
+
+    private Op op;
+    private Field fvalue;
 	
     /**
      * Constructor.
@@ -21,16 +26,18 @@ public class IndexPredicate implements Serializable {
      */
     public IndexPredicate(Predicate.Op op, Field fvalue) {
         // some code goes here
+        this.op = op;
+        this.fvalue = fvalue;
     }
 
     public Field getField() {
         // some code goes here
-        return null;
+        return fvalue;
     }
 
     public Predicate.Op getOp() {
         // some code goes here
-        return null;
+        return op;
     }
 
     /** Return true if the fieldvalue in the supplied predicate
@@ -40,7 +47,8 @@ public class IndexPredicate implements Serializable {
     */
     public boolean equals(IndexPredicate ipd) {
         // some code goes here
-        return false;
+        if (ipd == null) return false;
+        return op.equals(ipd.getOp()) && fvalue.equals(ipd.getField());
     }
 
 }

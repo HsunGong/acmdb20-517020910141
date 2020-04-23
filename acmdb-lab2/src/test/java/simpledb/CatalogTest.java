@@ -9,14 +9,13 @@ import junit.framework.Assert;
 import junit.framework.JUnit4TestAdapter;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import simpledb.TestUtil.SkeletonFile;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.systemtest.SystemTestUtil;
 
-@Ignore class CatalogTest extends SimpleDbTestBase {
+public class CatalogTest extends SimpleDbTestBase {
 	private static Random r = new Random();
     private static String name = SystemTestUtil.getUUID();
     private static int id1 = r.nextInt();
