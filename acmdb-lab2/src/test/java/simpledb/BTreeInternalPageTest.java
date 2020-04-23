@@ -1,4 +1,4 @@
-package lab2.simpledb;
+package simpledb;
 import simpledb.BTreeFileEncoder.EntryComparator;
 import simpledb.BTreeFileEncoder.ReverseEntryComparator;
 import simpledb.TestUtil.SkeletonFile;

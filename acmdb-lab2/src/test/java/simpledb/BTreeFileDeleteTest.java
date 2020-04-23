@@ -1,4 +1,4 @@
-package lab2.simpledb;
+package simpledb;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.Predicate.Op;
 
