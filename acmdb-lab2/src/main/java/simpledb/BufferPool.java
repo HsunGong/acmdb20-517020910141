@@ -28,22 +28,7 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     private final int numPages;
-    private final HashSet<Page> pages;
     private final ConcurrentHashMap<PageId, Page> idPageMap;
-    private Boolean refreshData(Page page) {
-        assert (page != null);
-        PageId pid = page.getId();
-        Page old_page = this.idPageMap.get(pid);
-        if (old_page.equals(page))
-            return true;
-        
-        pages.remove(old_page);
-
-        pages.add(page);
-        idPageMap.put(pid, page);
-
-        return false;
-    }
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -53,7 +38,6 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         this.numPages = numPages;
-        this.pages = new HashSet<Page>();
         this.idPageMap = new ConcurrentHashMap<PageId, Page>();
     }
     
@@ -92,15 +76,13 @@ public class BufferPool {
         Page page = this.idPageMap.get(pid);
         if (page != null) return page;
 
-        if (this.pages.size() == this.numPages) {
-            // throw new DbException("Page overwrited");
-            this.evictPage();
-        }
+                // Now we have the proper lock
+        if (this.idPageMap.size() == numPages) evictPage();
 
         page = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
-        this.pages.add(page);
         this.idPageMap.put(pid, page);
-
+        page.setBeforeImage();
+        
         return page;
     }
 
@@ -171,11 +153,13 @@ public class BufferPool {
         ArrayList<Page> dirtyPages = tableFile.insertTuple(tid, t);
 
         for (Page page : dirtyPages) {
-            if (!idPageMap.containsKey(page.getId())) {
+            if (!idPageMap.containsKey(page.getId()) && idPageMap.size() == this.numPages) {
                 // refreshData(page);
                 // getPage(tid, page.getId(), perm);
-                throw new DbException("do not exist such page");
+                evictPage();
+                // throw new DbException("do not exist such page");
             }
+            idPageMap.put(page.getId(), page);
             page.markDirty(true, tid);
         }
     }
@@ -205,10 +189,11 @@ public class BufferPool {
             if (!idPageMap.containsKey(page.getId())) {
                 // refreshData(page);
                 // getPage(tid, pid, perm);
-                throw new DbException("do not exist such page");
+                evictPage();
+                // throw new DbException("do not exist such page");
             }
+            idPageMap.put(page.getId(), page);
             page.markDirty(true, tid);
-            
         }
     }
 
@@ -238,7 +223,6 @@ public class BufferPool {
         Page page = idPageMap.get(pid);
         if (page != null) {
             this.idPageMap.remove(pid, page);
-            this.pages.remove(page);
         }
     }
 
@@ -275,20 +259,19 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
-
         Page evictPage = null;
-        for (Page page : this.pages) {
-            if (page.isDirty() == null) {
-                evictPage = page;
+
+        for (PageId pid : idPageMap.keySet()) {
+            if (idPageMap.get(pid).isDirty() == null) {
+                evictPage = idPageMap.get(pid);
                 break;
             }
         }
         if (evictPage == null) throw new DbException("no non-dirty page to evict");
         
         try {
+            assert evictPage.isDirty() == null : "Evict a dirty page!";
             flushPage(evictPage.getId());
-
-            this.pages.remove(evictPage);
             this.idPageMap.remove(evictPage.getId());
         } catch (IOException e) {
             throw new DbException(e.getMessage());
