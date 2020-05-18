@@ -273,6 +273,7 @@ public class HeapPage implements Page {
             if (!isSlotUsed(i)) {
                 this.markSlotUsed(i, true);
                 t.setRecordId(new RecordId(pid, i));
+                tuples[i] = t;
                 return;
             }
         }
@@ -328,6 +329,8 @@ public class HeapPage implements Page {
     private void markSlotUsed(int i, boolean value) {
         // some code goes here
         // not necessary for lab1
+        if (i >= numSlots) return;
+
         int index = i / 8;
         int offset = i % 8;
         if (value) header[index] |= (1 << offset);

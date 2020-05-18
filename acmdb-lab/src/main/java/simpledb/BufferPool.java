@@ -76,7 +76,6 @@ public class BufferPool {
         Page page = this.idPageMap.get(pid);
         if (page != null) return page;
 
-                // Now we have the proper lock
         if (this.idPageMap.size() == numPages) evictPage();
 
         page = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
