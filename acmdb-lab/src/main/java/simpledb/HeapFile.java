@@ -98,7 +98,7 @@ public class HeapFile implements DbFile {
      */
     public int numPages() {
         // some code goes here
-        return ((int) file.length() / BufferPool.getPageSize());
+        return (int) (file.length() / BufferPool.getPageSize());
     }
 
     /**
@@ -159,9 +159,18 @@ public class HeapFile implements DbFile {
         public boolean hasNext() throws DbException, TransactionAbortedException{
             // if closed
             if (this.tupleIterator == null) return false;
-            // has next tuple or next page
-            if (this.tupleIterator.hasNext() || this.curPid < numPages() - 1) return true;
-            return false;
+
+            // preserve iterator change for delete test
+            while (! tupleIterator.hasNext()) {
+                if (this.curPid >= numPages() - 1) return tupleIterator.hasNext();
+                this.curPid ++;
+
+                HeapPageId pageId = new HeapPageId(getId(), this.curPid);
+                HeapPage page = (HeapPage) Database.getBufferPool().getPage(this.transactionId, pageId, Permissions.READ_ONLY);
+                tupleIterator = page.iterator();
+            }
+
+            return tupleIterator.hasNext();
         }
 
         @Override
