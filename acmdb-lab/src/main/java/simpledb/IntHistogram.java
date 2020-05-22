@@ -4,6 +4,13 @@ package simpledb;
  */
 public class IntHistogram {
 
+    private int buckets;
+    private int min, max;
+    
+    private int ntups;
+    private int width;
+    private int[] histogram;
+
     /**
      * Create a new IntHistogram.
      * 
@@ -21,7 +28,20 @@ public class IntHistogram {
      * @param max The maximum integer value that will ever be passed to this class for histogramming
      */
     public IntHistogram(int buckets, int min, int max) {
-    	// some code goes here
+    	this.min = min;
+        this.max = max;
+        if (max - min + 1 < buckets) buckets = max - min + 1; //optim
+        this.buckets = buckets;
+
+        this.width = (int) Math.ceil((double) (max - min + 1) / buckets); // avoid 0
+        this.ntups = 0;
+
+        this.histogram = new int[buckets];
+        for (int i = 0; i < this.histogram.length; i++) this.histogram[i] = 0;
+    }
+
+    private int val2Idx(int v) {
+        return (v == max) ? buckets - 1 : (v - min) / width;
     }
 
     /**
@@ -29,7 +49,9 @@ public class IntHistogram {
      * @param v Value to add to the histogram
      */
     public void addValue(int v) {
-    	// some code goes here
+    	int index = val2Idx(v);
+        ++ histogram[index];
+        ++ ntups;
     }
 
     /**
@@ -43,9 +65,51 @@ public class IntHistogram {
      * @return Predicted selectivity of this particular operator and value
      */
     public double estimateSelectivity(Predicate.Op op, int v) {
+    	int bucketIndex = val2Idx(v);
+        int height = (v >= min && v <= max) ? histogram[bucketIndex] : -1;
 
-    	// some code goes here
-        return -1.0;
+        int left = bucketIndex * width + min;
+        int right = bucketIndex * width + min + width - 1;
+
+        switch (op) {
+            case EQUALS:
+                if (v < min || v > max) return 0.0;
+            
+                return (double) height / width / ntups;
+            case NOT_EQUALS:
+                return (double) 1 - estimateSelectivity(Predicate.Op.EQUALS, v);
+            case GREATER_THAN:
+                if (v < min) return 1.0;
+                if (v > max) return 0.0;
+                
+                // partial s.t. datas in histogram[idx]
+                double partialIn = (double) ((right - v) / width) * height;
+                // full s.t. datas in his[>idx]
+                double allIn = 0;
+                for (int i = bucketIndex + 1; i < buckets; ++i) allIn += (double) histogram[i];
+
+                return (partialIn + allIn) / ntups;
+            case LESS_THAN:
+                if (v < min) return 0.0;
+                if (v > max) return 1.0;
+
+                partialIn = (double) ((v - left) / width) * height;
+                
+                allIn = 0;
+                for (int i = bucketIndex - 1; i >= 0; --i) allIn += histogram[i];
+
+                return (partialIn + allIn)/ ntups;
+            case LESS_THAN_OR_EQ:
+                return estimateSelectivity(Predicate.Op.LESS_THAN, v + 1);
+                // return estimateSelectivity(Predicate.Op.LESS_THAN, v) + estimateSelectivity(Predicate.Op.EQUALS, v);
+            case GREATER_THAN_OR_EQ:
+                return estimateSelectivity(Predicate.Op.GREATER_THAN, v - 1);
+                // return estimateSelectivity(Predicate.Op.GREATER_THAN, v) + estimateSelectivity(Predicate.Op.EQUALS, v);
+            case LIKE: // NOT supported
+                return avgSelectivity();
+            default:
+                throw new RuntimeException("Not such OP");
+        }
     }
     
     /**
