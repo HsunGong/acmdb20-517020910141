@@ -107,11 +107,10 @@ public class JoinOptimizer {
             // You do not need to implement proper support for these for Lab 5.
             return card1 + cost1 + cost2;
         } else {
-            // Insert your code here.
             // HINT: You may need to use the variable "j" if you implemented
             // a join algorithm that's more complicated than a basic
             // nested-loops join.
-            return -1.0;
+            return cost1 + card1 * cost2 + (double) card1 * card2;
         }
     }
 
@@ -156,7 +155,32 @@ public class JoinOptimizer {
             boolean t2pkey, Map<String, TableStats> stats,
             Map<String, Integer> tableAliasToId) {
         int card = 1;
-        // some code goes here
+        // Actually for estimateJoinCardinality
+        int smaller = card1 < card2 ? card1 : card2;
+        int bigger = card1 > card2 ? card1 : card2;
+        switch (joinOp) {
+            case EQUALS:
+                if (t1pkey && t2pkey) card = smaller;
+                else if (t1pkey) card = card2;
+                else if (t2pkey) card = card1;
+                else card = bigger;
+                break;
+            case NOT_EQUALS: // Seems not used ???
+                if (t1pkey && t2pkey) card = card1 * card2 - smaller;
+                else if (t1pkey) card = card1 * card2 - card2;
+                else if (t2pkey) card = card1 * card2 - card1;
+                else card = card1 * card2 - bigger;
+                break;
+            
+            case GREATER_THAN:
+            case GREATER_THAN_OR_EQ:
+            case LESS_THAN:
+            case LESS_THAN_OR_EQ:
+                card = (int) (card1 * card2 * 0.3);
+                break;
+            default:
+                card = card1 * card2;
+        }
         return card <= 0 ? 1 : card;
     }
 
@@ -217,11 +241,43 @@ public class JoinOptimizer {
             HashMap<String, TableStats> stats,
             HashMap<String, Double> filterSelectivities, boolean explain)
             throws ParsingException {
-        //Not necessary for labs 1--3
+        // Ex4: JOIN ORDERING, pseducode
+        // 1. j = set of join nodes
+        // 2. for (i in 1...|j|):  // First find best plan for single join, then for two joins, etc.
+        // 3.     for s in {all length i subsets of j} // Looking at a concrete subset of joins
+        // 4.       bestPlan = {}  // We want to find the best plan for this concrete subset
+        // 5.       for s' in {all length i-1 subsets of s}
+        // 6.            subplan = optjoin(s')  // Look-up in the cache the best query plan for s but with one relation missing
+        // 7.            plan = best way to join (s-s') to subplan // Now find the best plan to extend s' by one join to get s
+        // 8.            if (cost(plan) < cost(bestPlan))
+        // 9.               bestPlan = plan // Update the best plan for computing s
+        // 10.      optjoin(s) = bestPlan
+        // 11. return optjoin(j)
 
-        // some code goes here
-        //Replace the following
-        return joins;
+        int numJoinNodes = joins.size();
+        PlanCache pc = new PlanCache();
+        Set<LogicalJoinNode> wholeSet = null; // Final
+
+        for (int i = 1; i <= numJoinNodes; i++) {
+            Set<Set<LogicalJoinNode>> setOfSubset = this.enumerateSubsets(this.joins, i);
+            for (Set<LogicalJoinNode> subset : setOfSubset) {
+                if (subset.size() == numJoinNodes) wholeSet = subset; // record final
+                
+                Double bestCost = Double.MAX_VALUE;
+                CostCard bestPlan = new CostCard();
+                for (LogicalJoinNode toRemove : subset) {
+                    CostCard plan = computeCostAndCardOfSubplan(stats, filterSelectivities, toRemove, subset, bestCost, pc);
+                    
+                    if (plan != null) {
+                        bestCost = plan.cost;
+                        bestPlan = plan;
+                    }
+                }
+
+                if (bestPlan.plan != null) pc.addPlan(subset, bestPlan.cost, bestPlan.card, bestPlan.plan);
+            }
+        }
+        return pc.getOrder(wholeSet);
     }
 
     // ===================== Private Methods =================================
