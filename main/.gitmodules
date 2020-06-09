@@ -1,0 +1,7 @@
+[submodule "lib"]
+	path = lib
+	url = https://github.com/shsjxzh/ACM-DB.git
+	branch = master
+[submodule "ACM-DB"]
+	path = ACM-DB
+	url = https://github.com/shsjxzh/ACM-DB.git
