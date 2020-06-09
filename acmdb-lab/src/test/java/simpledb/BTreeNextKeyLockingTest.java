@@ -23,7 +23,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		tid = new TransactionId();
+		tid = new TransactionId(); // 0
 	}
 
 	@After
@@ -33,10 +33,9 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 
 	@Test
 	public void nextKeyLockingTestLessThan() throws Exception {
-		
 		// This should create a B+ tree with 100 leaf pages
 		BTreeFile bigFile = BTreeUtility.createRandomBTreeFile(2, 50200,
-				null, null, 0);
+				null, null, 0); // 1
 
 		// get a key from the middle of the root page
 		BTreePageId rootPtrPid = new BTreePageId(bigFile.getId(), 0, BTreePageId.ROOT_PTR);
@@ -81,7 +80,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		}
 
 		Database.getBufferPool().transactionComplete(tid);
-		tid = new TransactionId();
+		tid = new TransactionId(); // 2
 
 		// search for tuples less than or equal to the key
 		ipred = new IndexPredicate(Op.LESS_THAN_OR_EQ, key);
@@ -95,14 +94,16 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		fit.close();
 
 		// In a different thread, try to insert tuples containing the key
-		TransactionId tid1 = new TransactionId();
+		TransactionId tid1 = new TransactionId(); // 3
 		BTreeWriter bw1 = new BTreeWriter(tid1, bigFile, ((IntField) key).getValue(), 1);
 		bw1.start();
 
-		// allow thread to start
-		Thread.sleep(POLL_INTERVAL);
+		// allow insert thread to start, but main thread wait.
+		Thread.sleep(POLL_INTERVAL); // wait() in lockMang find this lock is occupied.
+		System.out.println("POLL ENDEND");
+		// System.out.println("THREAD:" + Thread.currentThread().getName() + "\t" + Thread.currentThread().isInterrupted());
 
-		// search for tuples less than or equal to the key
+		// search for tuples less than or equal to the key -> need to be done still while lockManager is stuck
 		ipred = new IndexPredicate(Op.LESS_THAN_OR_EQ, key);
 		fit = bigFile.indexIterator(tid, ipred);
 		fit.open();
@@ -112,6 +113,7 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 			keyCountAfter++;
 		}
 		fit.close();
+		// System.out.println("SEARCH ENDEND");
 
 		// make sure our indexIterator() is working
 		assertTrue(keyCountBefore > 0);
@@ -120,7 +122,8 @@ public class BTreeNextKeyLockingTest extends SimpleDbTestBase {
 		assertEquals(keyCountBefore, keyCountAfter);
 		assertFalse(bw1.succeeded());
 
-		// now let the inserts happen
+		// now let the inserts happen, finish fit with tid=22, so the read lock is unlocked
+		System.out.println(tid + " THREAD:" + Thread.currentThread().getName() + "\t" + Thread.currentThread().isInterrupted());
 		Database.getBufferPool().transactionComplete(tid);
 
 		while(!bw1.succeeded()) {
